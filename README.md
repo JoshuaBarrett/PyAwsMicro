@@ -1,5 +1,5 @@
 # PyAwsMicro
-PyAWSMicrois a tiny, nimble Python project designed to provide access to AWS API functions in a minimalistic and resource-conserving manner. 
+PyAWSMicro is a tiny, nimble Python project designed to provide access to AWS API functions in a minimalistic and resource-conserving manner. 
 
 <h3>Environment Setup</h3>
 Run setup_env.bat to create config template, virtual environment and install packages with requirements.txt
