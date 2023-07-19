@@ -7,7 +7,7 @@ def buildAuthHeader(method, fullUrl, region, service, isoDateTime, payload, awsK
     return { 'Authorization': authorisationHeaderValue }
 
 def buildAuthSignature(method, fullUrl, region, service, isoDateTime, payload, awsSecret): 
-    canonicalRequest = buildCanonicalRequest(method, fullUrl, isoDateTime, payload)
+    canonicalRequest = buildCanonicalRequest(method, fullUrl, isoDateTime, payload)  
     hashedCanonicalRequest = hasher.basicHash(canonicalRequest).hex()
     
     stringToSign = f'AWS4-HMAC-SHA256\n{isoDateTime}\n{isoDateTime[0:8]}/{region}/{service}/aws4_request\n{hashedCanonicalRequest}'
