@@ -4,6 +4,7 @@ import requests
 import url_utility
 import config
 import json
+from urllib.parse import quote_plus
 
 class SqsClient:
     def __init__(self, accessKey, accessSecret, accNumber, region):
@@ -23,29 +24,25 @@ class SqsClient:
         responseJson = self.sendGetRequest(url, headers=headers)
         messages = responseJson["ReceiveMessageResponse"]["ReceiveMessageResult"]["messages"]
         if (not messages or len(messages) == 0):
-            return None
-        
+            return None      
 
         receiptHandle = messages[0]["ReceiptHandle"]
-        print(f'ReceiptHandle: {receiptHandle}')
+        #print(f'ReceiptHandle: {receiptHandle}')
 
         self.deleteMessage(queueName, receiptHandle)
         #Process deletion of message
 
-    def deleteMessage(self, queueName, receipt_handle):
-        delete_url = self.baseUrl + f'{queueName}' + "?Action=DeleteMessage"
-
-        body = {
-            "ReceiptHandle": receipt_handle
-        }
+    def deleteMessage(self, queueName, receipt_handle):       
+        encoded = quote_plus(receipt_handle)                
+        delete_url = self.baseUrl + f'{queueName}' + "?Action=DeleteMessage&ReceiptHandle=" + encoded
 
         isoDateTime = getCurrentTimeISO()
         headers = self.buildHeaders(isoDateTime)
 
-        authHeader = aws_signature_v4.buildAuthHeader("POST", delete_url, self.region, "sqs", isoDateTime, json.dumps(body), self.accessKey, self.accessSecret)
+        authHeader = aws_signature_v4.buildAuthHeader("POST", delete_url, self.region, "sqs", isoDateTime, "", self.accessKey, self.accessSecret)
         headers.update(authHeader) 
         
-        response = self.sendPostRequest(delete_url, headers, body)
+        response = self.sendPostRequest(delete_url, headers)
         print(response)
    
     def sendGetRequest(self, url, headers):
@@ -55,8 +52,8 @@ class SqsClient:
         else: 
             return None
         
-    def sendPostRequest(self, url, headers, body):
-        response = requests.post(url, headers=headers, data=body)
+    def sendPostRequest(self, url, headers):
+        response = requests.post(url, headers=headers)
         return response
 
     def buildHeaders(self, isoDateTime):
@@ -64,7 +61,6 @@ class SqsClient:
             'Host': url_utility.get_host(self.baseUrl),
             'X-Amz-Date': isoDateTime,
             'Accept': "application/json",
-            'Content-Type': 'application/x-www-form-urlencoded',
         }
 
         return headers
@@ -75,4 +71,5 @@ def getCurrentTimeISO():
  
 client = SqsClient(config.AWS_KEY, config.AWS_SECRET, config.AWS_ACCOUNT_NUMBER, config.AWS_REGION)
 client.getMessage(config.AWS_QUEUENAME)
-#print(x)
+
+
