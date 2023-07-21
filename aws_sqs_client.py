@@ -26,11 +26,14 @@ class SqsClient:
         if (not messages or len(messages) == 0):
             return None      
 
+        #Lets delete the message
         receiptHandle = messages[0]["ReceiptHandle"]
-        #print(f'ReceiptHandle: {receiptHandle}')
+        responseStatus = self.deleteMessage(queueName, receiptHandle)
+        print(responseStatus)
 
-        self.deleteMessage(queueName, receiptHandle)
-        #Process deletion of message
+        messageBody = messages[0]["Body"]
+        return messageBody
+
 
     def deleteMessage(self, queueName, receipt_handle):       
         encoded = quote_plus(receipt_handle)                
@@ -42,8 +45,9 @@ class SqsClient:
         authHeader = aws_signature_v4.buildAuthHeader("POST", delete_url, self.region, "sqs", isoDateTime, "", self.accessKey, self.accessSecret)
         headers.update(authHeader) 
         
-        response = self.sendPostRequest(delete_url, headers)
-        print(response)
+        responseStatus = self.sendPostRequest(delete_url, headers).status_code
+        return responseStatus
+
    
     def sendGetRequest(self, url, headers):
         response = requests.get(url, headers=headers)
@@ -70,6 +74,7 @@ def getCurrentTimeISO():
         return isoDateTime
  
 client = SqsClient(config.AWS_KEY, config.AWS_SECRET, config.AWS_ACCOUNT_NUMBER, config.AWS_REGION)
-client.getMessage(config.AWS_QUEUENAME)
+messageBody = client.getMessage(config.AWS_QUEUENAME)
+print(messageBody)
 
 
