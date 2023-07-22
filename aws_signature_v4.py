@@ -9,7 +9,6 @@ def buildAuthHeaderProto(httpMethod, fullUrl, region, service, isoDateTime, head
     signedHeaders = "content-length;content-type;host;x-amz-content-sha256;x-amz-date"
     canonicalRequest = f'{httpMethod}\n{canonicalUri}\n{canonicalQueryString}\n{canonicalHeaders}\n{signedHeaders}\n{hashedPayload}'
     hashedCanonicalRequest = hasher.basicHash(canonicalRequest).hex()
-    print(canonicalRequest) 
     stringToSign = f'AWS4-HMAC-SHA256\n{isoDateTime}\n{isoDateTime[0:8]}/{region}/{service}/aws4_request\n{hashedCanonicalRequest}'
     
     kSigning = buildKSigning(awsSecret, isoDateTime[0:8], region, service)
@@ -48,3 +47,13 @@ def buildKSigning(awsSecret, shortDate, region, service):
     kService = hasher.keyedHash(kRegion, service)
     kSigning = hasher.keyedHash(kService, "aws4_request")
     return kSigning
+
+def prepPayload(params):
+    strEncodedPayload = "\n".join([f'{key}={url_utility.urlEncode(value)}' for key, value in params.items()])
+    return strEncodedPayload
+
+def hashPayload(params):
+    strEncodedPayload = "\n".join([f'{key}={url_utility.urlEncode(value)}' for key, value in params.items()])
+    hashedPayload = hasher.basicHash(strEncodedPayload).hex()
+    return hashedPayload
+
