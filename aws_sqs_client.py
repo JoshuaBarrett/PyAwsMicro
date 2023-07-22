@@ -16,13 +16,13 @@ class SqsClient:
 
     def getMessage(self, queueName):
         isoDateTime = getCurrentTimeISO()
-        url = self.baseUrl + f'{queueName}' + "?Action=ReceiveMessage&MaxNumberOfMessages=1"        
+        url = self.baseUrl + f'{queueName}' + "?Action=ReceiveMessage&MaxNumberOfMessages=1&WaitTimeSeconds=10"        
         headers = self.buildHeaders(isoDateTime)
               
         authHeader = aws_signature_v4.buildAuthHeader("GET", url, self.region, "sqs", isoDateTime, "", self.accessKey, self.accessSecret)
         headers.update(authHeader)       
         
-        responseJson = self.sendGetRequest(url, headers=headers)
+        responseJson = requests.get(url, headers=headers).json()
         messages = responseJson["ReceiveMessageResponse"]["ReceiveMessageResult"]["messages"]
         if (not messages or len(messages) == 0):
             return None      
@@ -30,11 +30,12 @@ class SqsClient:
         #Lets delete the message
         receiptHandle = messages[0]["ReceiptHandle"]
         responseStatus = self.deleteMessage(queueName, receiptHandle)
-        print(responseStatus)
-
-        messageBody = messages[0]["Body"]
-        return messageBody
-
+        
+        if responseStatus == 200:
+            messageBody = messages[0]["Body"]     
+            return messageBody
+        
+        return None
 
     def deleteMessage(self, queueName, receipt_handle):       
         delete_url = self.baseUrl + f'{queueName}' + "?Action=DeleteMessage"        
@@ -79,6 +80,7 @@ def getCurrentTimeISO():
 
 client = SqsClient(config.AWS_KEY, config.AWS_SECRET, config.AWS_ACCOUNT_NUMBER, config.AWS_REGION)
 x = client.getMessage(config.AWS_QUEUENAME)
+print(x)
 
 
 
