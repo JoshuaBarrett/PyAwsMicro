@@ -31,3 +31,8 @@ def keyedHash(key_bytes, data_bytes):
     # Return the HMAC digest as a hexadecimal string
     
     return outer_digest
+
+
+content = "ReceiptHandle=AQEBNcvkQFA%2FHbek4vgSaumj5NWhAgkcZ4Id11J2gsqsBU4HeANDi6lykCgKfg7SwmEr08NZ8rMh3DoRwtftbVRRUbXE3fgPwnB%2FNx1dd7ceDWBh3gwzeQ3TCXp7TxacDa4BUliRNuBa%2F3DeDR8vRix3tKXvrczqQq59%2B2CwFSO8FdcBaNsoHLvuV3lIkPIpVbPEiggyjPBNUH1bs1xUJ1bXasQRnkG9Dh%2BU%2B978TFVcqJsy%2B%2FK4BQJYQ0uhLu%2FyLfKWO00obYty3GV6zLIVNbUUfAXAQ5RSyaZx4SDBLAqI%2FDhkZZa6LGx7bpcTZBfYN5uGHBEOZiLSb50JEw%2BtRIEu%2BJ67g3bycGHTujqSQUyB%2BFtWjZElCwJrVJLKIdj7lkQSg5l2ZJmtuZpN%2BAgYhjrC1A%3D%3D"
+data_bytes = content.encode("utf-8")
+print(uhashlib.sha256(data_bytes).digest().hex())

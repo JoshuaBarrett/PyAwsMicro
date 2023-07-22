@@ -1,6 +1,23 @@
 import hasher
 import url_utility
 
+def buildAuthHeaderProto(httpMethod, fullUrl, region, service, isoDateTime, headers, hashedPayload, awsKey, awsSecret):
+        
+    canonicalUri = url_utility.get_uri(fullUrl)
+    canonicalQueryString = url_utility.get_query_string(fullUrl)    
+    canonicalHeaders = "".join([f'{key}:{value}\n'  for key, value in headers.items()])
+    signedHeaders = "content-length;content-type;host;x-amz-content-sha256;x-amz-date"
+    canonicalRequest = f'{httpMethod}\n{canonicalUri}\n{canonicalQueryString}\n{canonicalHeaders}\n{signedHeaders}\n{hashedPayload}'
+    hashedCanonicalRequest = hasher.basicHash(canonicalRequest).hex()
+    print(canonicalRequest) 
+    stringToSign = f'AWS4-HMAC-SHA256\n{isoDateTime}\n{isoDateTime[0:8]}/{region}/{service}/aws4_request\n{hashedCanonicalRequest}'
+    
+    kSigning = buildKSigning(awsSecret, isoDateTime[0:8], region, service)
+    signature = hasher.keyedHash(kSigning, stringToSign).hex()
+
+    authorisationHeaderValue = f'AWS4-HMAC-SHA256 Credential={awsKey}/{isoDateTime[0:8]}/{region}/sqs/aws4_request, SignedHeaders=content-length;content-type;host;x-amz-content-sha256;x-amz-date, Signature={signature}'
+    return { 'Authorization': authorisationHeaderValue }
+
 def buildAuthHeader(method, fullUrl, region, service, isoDateTime, payload, awsKey, awsSecret):
     signature = buildAuthSignature(method, fullUrl, region, service, isoDateTime, payload, awsSecret)
     authorisationHeaderValue = f'AWS4-HMAC-SHA256 Credential={awsKey}/{isoDateTime[0:8]}/{region}/sqs/aws4_request, SignedHeaders=host;x-amz-date, Signature={signature}'

@@ -1,3 +1,5 @@
+from urllib.parse import quote_plus 
+
 def get_host(url):
     url = url.split("://", 1)[-1]    
     host = url.split("/", 1)[0]
@@ -12,4 +14,7 @@ def get_uri(url):
 def get_query_string(url):
     url = url.split("://", 1)[-1]
     query_string = url.split("?", 1)[-1]
-    return query_string   
+    return query_string
+
+def urlEncode(strData):
+    return quote_plus(strData)
