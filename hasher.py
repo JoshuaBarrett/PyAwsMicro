@@ -31,5 +31,3 @@ def keyedHash(key_bytes, data_bytes):
     # Return the HMAC digest as a hexadecimal string
     
     return outer_digest
-
-

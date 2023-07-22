@@ -15,18 +15,27 @@ class SqsClient:
         self.baseUrl = f'http://sqs.{self.region}.amazonaws.com/{accNumber}/'
 
     def getMessage(self, queueName):
+        url = self.baseUrl + f'{queueName}' + "?Action=ReceiveMessage&MaxNumberOfMessages=1&WaitTimeSeconds=10"
         isoDateTime = getCurrentTimeISO()
-        url = self.baseUrl + f'{queueName}' + "?Action=ReceiveMessage&MaxNumberOfMessages=1&WaitTimeSeconds=10"        
-        headers = self.buildHeaders(isoDateTime)
-              
-        authHeader = aws_signature_v4.buildAuthHeader("GET", url, self.region, "sqs", isoDateTime, "", self.accessKey, self.accessSecret)
-        headers.update(authHeader)       
-        
-        responseJson = requests.get(url, headers=headers).json()
-        messages = responseJson["ReceiveMessageResponse"]["ReceiveMessageResult"]["messages"]
-        if (not messages or len(messages) == 0):
-            return None      
+                
+        headers = {
+            'host': url_utility.get_host(self.baseUrl),
+            'x-amz-date': isoDateTime,
+        }
 
+        emptyPayloadHashed = hasher.basicHash("").hex()
+        authHeaderProto = aws_signature_v4.buildAuthHeaderProto("GET", url, self.region, "sqs", isoDateTime, headers, emptyPayloadHashed, self.accessKey, self.accessSecret)
+        headers.update(authHeaderProto)     
+        
+        #return
+        response = self.get(url, headers)
+        if response.status_code != 200:
+            return None
+        
+        messages = response.json()["ReceiveMessageResponse"]["ReceiveMessageResult"]["messages"]
+        if (not messages or len(messages) == 0):
+            return None
+      
         #Lets delete the message
         receiptHandle = messages[0]["ReceiptHandle"]
         responseStatus = self.deleteMessage(queueName, receiptHandle)
@@ -46,7 +55,7 @@ class SqsClient:
             "ReceiptHandle": receipt_handle
         }
 
-        #calculate hex payload - values need to be pre url encoded
+        #calculate hash payload - values need to be pre url encoded
         prehashedPayload = aws_signature_v4.prepPayload(params)
         contentLength = len(prehashedPayload)
         hashedPayload = hasher.basicHash(prehashedPayload).hex()
@@ -64,15 +73,11 @@ class SqsClient:
         
         response = requests.post(delete_url, headers=headers, data=params)
         return response.status_code   
-
-    def buildHeaders(self, isoDateTime):
-        headers = {
-            'host': url_utility.get_host(self.baseUrl),
-            'X-Amz-Date': isoDateTime,
-            'Accept': "application/json",
-        }
-
-        return headers
+    
+    def get(self, url, headers):
+        headers.update({"accept": "application/json"})
+        response = requests.get(url, headers=headers)
+        return response
 
 def getCurrentTimeISO():
         isoDateTime = datetime.utcnow().strftime("%Y%m%dT%H%M%S") + 'Z'

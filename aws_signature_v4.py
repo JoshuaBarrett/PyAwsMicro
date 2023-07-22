@@ -8,6 +8,7 @@ def buildAuthHeaderProto(httpMethod, fullUrl, region, service, isoDateTime, head
     canonicalHeaders = "".join([f'{key}:{value}\n' for key, value in sorted(headers.items())])
     signedHeaders = ";".join([key for key, value in sorted(headers.items())])
     canonicalRequest = f'{httpMethod}\n{canonicalUri}\n{canonicalQueryString}\n{canonicalHeaders}\n{signedHeaders}\n{hashedPayload}'
+    
     hashedCanonicalRequest = hasher.basicHash(canonicalRequest).hex()
     stringToSign = f'AWS4-HMAC-SHA256\n{isoDateTime}\n{isoDateTime[0:8]}/{region}/{service}/aws4_request\n{hashedCanonicalRequest}'
     
@@ -24,6 +25,7 @@ def buildAuthHeader(method, fullUrl, region, service, isoDateTime, payload, awsK
 
 def buildAuthSignature(method, fullUrl, region, service, isoDateTime, payload, awsSecret): 
     canonicalRequest = buildCanonicalRequest(method, fullUrl, isoDateTime, payload)  
+  
     hashedCanonicalRequest = hasher.basicHash(canonicalRequest).hex()
     
     stringToSign = f'AWS4-HMAC-SHA256\n{isoDateTime}\n{isoDateTime[0:8]}/{region}/{service}/aws4_request\n{hashedCanonicalRequest}'
@@ -32,11 +34,11 @@ def buildAuthSignature(method, fullUrl, region, service, isoDateTime, payload, a
     signature = hasher.keyedHash(kSigning, stringToSign)
     return signature.hex()
 
-def buildCanonicalRequest(httpMethod, fullUrl, isoDateTime, payload):
+def buildCanonicalRequest(httpMethod, fullUrl, isoDateTime, hashedPayload):
     host = url_utility.get_host(fullUrl)
     canonicalUri = url_utility.get_uri(fullUrl)
     canonicalQueryString = url_utility.get_query_string(fullUrl)    
-    hashedPayload = hasher.basicHash(payload).hex()
+    
     canonicalHeaders=f'host:{host}\nx-amz-date:{isoDateTime}\n'
     signedHeaders = "host;x-amz-date"
     return f'{httpMethod}\n{canonicalUri}\n{canonicalQueryString}\n{canonicalHeaders}\n{signedHeaders}\n{hashedPayload}'
